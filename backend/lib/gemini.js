@@ -1,8 +1,10 @@
 const MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
-const TIMEOUT_MS = 60_000
+const DEFAULT_TIMEOUT_MS = 60_000
 const wait = ms => new Promise(r => setTimeout(r, ms))
 
-export async function askGemini(system, user) {
+// options.timeoutMs: per-request timeout (the full report needs longer than a short question)
+// options.maxOutputTokens: upper limit for the reply
+export async function askGemini(system, user, { timeoutMs = DEFAULT_TIMEOUT_MS, maxOutputTokens } = {}) {
   let lastStatus = 502
 
   for (const model of MODELS) {
@@ -14,11 +16,15 @@ export async function askGemini(system, user) {
           {
             method: 'POST',
             headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY, 'Content-Type': 'application/json' },
-            signal: AbortSignal.timeout(TIMEOUT_MS),
+            signal: AbortSignal.timeout(timeoutMs),
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: system }] },
               contents: [{ role: 'user', parts: [{ text: user }] }],
-              generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+              generationConfig: {
+                temperature: 0.1,
+                responseMimeType: 'application/json',
+                ...(maxOutputTokens ? { maxOutputTokens } : {})
+              }
             })
           }
         )
@@ -35,7 +41,7 @@ export async function askGemini(system, user) {
         try {
           return JSON.parse(text)
         } catch {
-          lastStatus = 502 // not valid JSON: retry
+          lastStatus = 502 // not valid JSON (or cut off): retry
           continue
         }
       }

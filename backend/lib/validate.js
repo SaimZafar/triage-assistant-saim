@@ -42,7 +42,7 @@ export function isValidRef(ref) {
 }
 
 // "file#L7-L9" becomes file#L7, file#L8, file#L9. Anything else is returned unchanged.
-function expandRange(ref) {
+export function expandRange(ref) {
   const m = ref.match(/^(.+?)#L(\d+)\s*-\s*L?(\d+)$/)
   if (!m) return [ref]
   const file = m[1]
@@ -53,7 +53,7 @@ function expandRange(ref) {
 }
 
 // Removes [[file#ref]] tags from text, including malformed ones like [[a#L2], [b#X]]
-function stripTags(text) {
+export function stripTags(text) {
   return String(text ?? '')
     .replace(/(?:\[+[^\[\]]*\.md[^\[\]]*\]+[\s,]*)+/g, '')
     .replace(/\s+([.,;:])/g, '$1')

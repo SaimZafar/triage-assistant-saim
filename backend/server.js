@@ -8,6 +8,7 @@ import { askGemini } from './lib/gemini.js'
 import { ASK_SYSTEM } from './lib/prompts.js'
 import { validateResult } from './lib/validate.js'
 import { REPORT_SYSTEM, validateReport } from './lib/report.js'
+import { adaptReport } from './lib/adapt.js'
 
 if (!process.env.GEMINI_API_KEY) {
   console.error('Missing GEMINI_API_KEY. Put it in backend/.env or in the host settings.')
@@ -101,9 +102,10 @@ async function buildReport() {
   throw Object.assign(new Error('The report came back incomplete. Try again.'), { status: 502, retryAfter: 15 })
 }
 
+// /api/report returns the shape the frontend uses (incidents grouped). /api/report/raw returns the validated report as built.
 async function reportHandler(req, res) {
   const refresh = req.query.refresh === '1' && process.env.ALLOW_REFRESH === '1'
-  if (reportCache && !refresh) return res.json({ ...reportCache, cached: true })
+  if (reportCache && !refresh) return res.json({ ...adaptReport(reportCache), cached: true })
   try {
     if (!reportPending) {
       reportPending = buildReport().finally(() => {
@@ -111,16 +113,21 @@ async function reportHandler(req, res) {
       })
     }
     reportCache = await reportPending
-    res.json({ ...reportCache, cached: false })
+    res.json({ ...adaptReport(reportCache), cached: false })
   } catch (e) {
     console.error(`report failed: ${e.message}`)
     // keep serving the last good report if there is one
-    if (reportCache) return res.json({ ...reportCache, cached: true, stale: true })
+    if (reportCache) return res.json({ ...adaptReport(reportCache), cached: true, stale: true })
     res.status(e.status ?? 500).json({ message: e.message, retryAfter: e.retryAfter })
   }
 }
 
 app.route('/api/report').get(reportHandler).post(reportHandler)
+
+app.get('/api/report/raw', (req, res) => {
+  if (!reportCache) return res.status(404).json({ message: 'No report yet.' })
+  res.json(reportCache)
+})
 
 app.use((req, res) => res.status(404).json({ message: 'Not found' }))
 

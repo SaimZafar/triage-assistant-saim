@@ -5,6 +5,7 @@ import path from 'node:path'
 import { buildCorpus, DATA, FILES } from './lib/corpus.js'
 import { askGemini } from './lib/gemini.js'
 import { ASK_SYSTEM } from './lib/prompts.js'
+import { validateResult } from './lib/validate.js'
 
 if (!process.env.GEMINI_API_KEY) {
   console.error('Missing GEMINI_API_KEY. Put it in backend/.env or in the host settings.')
@@ -38,8 +39,9 @@ app.post('/api/ask', async (req, res) => {
   const started = Date.now()
   try {
     const result = await askGemini(ASK_SYSTEM, `FILES:\n${CORPUS}\n\nQUESTION: ${question}`)
-    console.log(`ask ok in ${Date.now() - started}ms`)
-    res.json({ question, ...result })
+    const checked = validateResult(result)
+    console.log(`ask ok in ${Date.now() - started}ms, ${checked.removedCitations.length} citation(s) removed`)
+    res.json({ question, ...checked })
   } catch (e) {
     console.error(`ask failed in ${Date.now() - started}ms: ${e.message}`)
     res.status(e.status ?? 500).json({ message: e.message, retryAfter: e.retryAfter })

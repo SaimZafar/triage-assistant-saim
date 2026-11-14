@@ -1,0 +1,12 @@
+{
+  "installCommand": "npm install",
+  "buildCommand": "cd frontend && npm ci && npm run build",
+  "outputDirectory": "frontend/dist",
+  "rewrites": [{ "source": "/api/(.*)", "destination": "/api" }],
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "{problem_c_data/**,backend/saved-report.json}",
+      "maxDuration": 60
+    }
+  }
+}

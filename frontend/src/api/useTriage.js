@@ -10,24 +10,29 @@
   Citations inside any text field: [[file#ref]]
     log line L7 | table row ID | runbook step S2 | rule R2.4
 
-  Severity   = 'P1' | 'P2' | 'P3' | 'P4'
-  Evidence   = 'confirmed' | 'suspected' | 'insufficient'
-  Claim      = { text, evidence, assumption? }            (assumption required when suspected)
-  TimelineEvent = { utc (ISO), text, incidentId }
-  AssetRef   = { tag: 'A-1005', role: 'reached' | 'involved' }
-  PathEdge   = { from, to, label, utc, evidence }         (from/to = asset tag or 'EXT:ip')
-  Incident   = { id, title, severity|null, severityWhy, summary, timeline[], assets[], accounts[],
-                 externals[{ip,geo?,note?}], path[], confirmed[], suspected[], insufficient[],
-                 actions[{text, runbook, step}], inform[{who, contact?, limitMinutes|null, how}] }
-  ReportResponse = { generatedAt, model, overallSeverity, summary, incidents[],
-                     missingSources[{name, why}], closedHarmless[{what, changeId, why}] }
   AskResponse = { question, answer, evidence, assumption?, gaps?[] }
+
+  The real backend returns citations as a separate array and has no tags in the text,
+  so adaptAsk() below turns the backend shape into the AskResponse shape.
 
   Open the app with ?mock at the end of the URL to use public/mock/*.json with no backend.
 */
 import { useCallback, useRef, useState } from 'react'
 
 const BASE = import.meta.env.VITE_API_URL ?? ''
+
+// Backend: { answer, claims[{text,label,citations,assumption}], evidence, assumption, citations[], gaps[] }
+// Frontend: answer text with [[file#ref]] tags, plus gaps shown as "not enough evidence".
+function adaptAsk(data) {
+  const tags = (data.citations ?? []).map(c => `[[${c}]]`).join(' ')
+  const missing = (data.claims ?? []).filter(c => c.label === 'insufficient').map(c => c.text)
+  const gaps = [...new Set([...(data.gaps ?? []), ...missing])]
+  return {
+    ...data,
+    answer: `${data.answer ?? ''} ${tags}`.trim(),
+    gaps
+  }
+}
 
 export function useTriage() {
   const [state, setState] = useState({ status: 'idle' })
@@ -62,8 +67,9 @@ export function useTriage() {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.message ?? `The server answered ${res.status}.`)
       }
-      const data = await res.json()
+      let data = await res.json()
       if (mock && kind === 'ask') data.question = question
+      if (!mock && kind === 'ask') data = adaptAsk(data)
       setState({ status: 'done', kind, data })
     } catch (e) {
       const message = e.name === 'AbortError' ? 'The analysis took longer than 90 seconds.' : e.message

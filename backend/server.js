@@ -51,24 +51,52 @@ app.post('/api/ask', async (req, res) => {
 
 // The report is built from the same 20 files every time, so it is generated once and kept in memory.
 // Add ?refresh=1 to build it again. Requests that arrive while it is being built share the same call.
+// A report that fails the quality check below is never cached, so the last good report stays.
 let reportCache = null
 let reportPending = null
 
+// A usable report has a timeline, confirmed claims, actions and contacts.
+// If the model skipped the citation format, the validator drops them all and one of these is empty.
+function reportProblems(report) {
+  const problems = []
+  if (report.timeline.length === 0) problems.push('no timeline')
+  if (report.confirmed.length === 0) problems.push('no confirmed claims')
+  if (report.actions.length === 0) problems.push('no actions')
+  if (report.inform.length === 0) problems.push('no contacts')
+  return problems
+}
+
 async function buildReport() {
   const started = Date.now()
-  const raw = await askGemini(REPORT_SYSTEM, `FILES:\n${CORPUS}\n\nWrite the incident report.`, {
-    timeoutMs: 150_000,
-    maxOutputTokens: 32768
-  })
-  const checked = validateReport(raw)
-  console.log(
-    `report ok in ${Date.now() - started}ms, ${checked.removedCitations.length} citation(s) removed, ${checked.notes.length} note(s)`
-  )
-  return { ...checked, generated_at: new Date().toISOString() }
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    // only the main model: the backup models follow the citation rules less well
+    const raw = await askGemini(REPORT_SYSTEM, `FILES:\n${CORPUS}\n\nWrite the incident report.`, {
+      timeoutMs: 150_000,
+      maxOutputTokens: 32768,
+      primaryOnly: true,
+      rounds: 6
+    })
+
+    const checked = validateReport(raw)
+    const problems = reportProblems(checked)
+
+    if (problems.length === 0) {
+      console.log(
+        `report ok in ${Date.now() - started}ms, ${checked.removedCitations.length} citation(s) removed, ${checked.notes.length} note(s)`
+      )
+      return { ...checked, generated_at: new Date().toISOString() }
+    }
+
+    console.warn(`report attempt ${attempt} rejected: ${problems.join(', ')}`)
+  }
+
+  throw Object.assign(new Error('The report came back incomplete. Try again.'), { status: 502, retryAfter: 15 })
 }
 
 async function reportHandler(req, res) {
   if (reportCache && req.query.refresh !== '1') return res.json({ ...reportCache, cached: true })
+
   try {
     if (!reportPending) {
       reportPending = buildReport().finally(() => {
@@ -79,6 +107,8 @@ async function reportHandler(req, res) {
     res.json({ ...reportCache, cached: false })
   } catch (e) {
     console.error(`report failed: ${e.message}`)
+    // keep serving the last good report if there is one
+    if (reportCache) return res.json({ ...reportCache, cached: true, stale: true })
     res.status(e.status ?? 500).json({ message: e.message, retryAfter: e.retryAfter })
   }
 }

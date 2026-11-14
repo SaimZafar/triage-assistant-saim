@@ -1,0 +1,35 @@
+:root {
+  --ink: #0E141B;
+  --slate: #17212B;
+  --slate-raised: #1F2B37;
+  --line: #2C3A48;
+  --chalk: #EEF2F5;
+  --fog: #93A4B3;
+  --sonar: #5FC8C2;
+
+  --p1: #E5484D;
+  --p2: #F08A3C;
+  --p3: #E5C14A;
+  --p4: #7F93A6;
+
+  --radius-panel: 14px;
+  --radius-input: 10px;
+  --radius-chip: 6px;
+  --radius-log: 4px;
+
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body: 'Public Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+html { color-scheme: dark; }
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--chalk);
+  font: 400 16px/1.55 var(--font-body);
+}
+:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

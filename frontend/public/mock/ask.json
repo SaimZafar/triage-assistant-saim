@@ -1,0 +1,9 @@
+{
+  "question": "",
+  "answer": "The VPN login for amalik at 05:49:12 UTC came from 198.51.100.77 in Romania, after four failed multi-factor attempts. [[11_vpn_auth_log.md#L3]] [[11_vpn_auth_log.md#L7]] The user directory lists amalik as Ayesha Malik, Finance Analyst, with laptop A-2014. [[18_user_directory.md#amalik]]",
+  "evidence": "suspected",
+  "assumption": "The logs show where the login came from, not who typed the password. Whether it was Ayesha or someone else is an inference.",
+  "gaps": [
+    "Whether Ayesha was travelling. No travel record is in the data pack."
+  ]
+}

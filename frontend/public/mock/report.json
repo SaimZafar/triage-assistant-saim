@@ -1,0 +1,426 @@
+{
+  "generatedAt": "2026-11-14T09:00:00Z",
+  "model": "gemini-2.5-flash",
+  "overallSeverity": "P1",
+  "summary": "Three separate incidents on 4 Nov 2026. The most serious is a login with the amalik password to the VPN from Romania that reached the file server and moved about 2.4 GB out of it. Two other incidents are lower severity, and two events were closed as approved changes.",
+  "incidents": [
+    {
+      "id": "INC-1",
+      "title": "VPN login from Romania, 2.4 GB from the file server",
+      "severity": "P1",
+      "severityWhy": "Credential compromise reached SRV-FS01 (High), which is P2 [[03_severity_matrix.md#Credential compromise (account used by an attacker)]]. Data exfiltration from a High asset is P1 [[03_severity_matrix.md#Data exfiltration (large transfer, confirmed or suspected)]]. The incident takes the highest part (rule 4.2) [[01_company_security_rules.md#R4.2]].",
+      "summary": "A phishing email reached three staff. A finance laptop then connected to the sender's address. About an hour and a half later the same address logged in to the VPN as amalik after four failed multi-factor attempts, reached the file server and database server, and pulled about 2.4 GB from the file server.",
+      "timeline": [
+        {
+          "utc": "2026-11-04T04:12:07Z",
+          "incidentId": "INC-1",
+          "text": "Phishing email M-55187 delivered to amalik, sraheel and utariq (spam score 6.2, SPF failed). [[16_email_gateway_log.md#L2]] [[16_email_gateway_log.md#L3]] [[16_email_gateway_log.md#L4]]"
+        },
+        {
+          "utc": "2026-11-04T04:19:40Z",
+          "incidentId": "INC-1",
+          "text": "LT-FIN-014 (10.20.5.14) connects to 198.51.100.77. [[14_firewall_perimeter_log.md#L8]] [[17_ids_alert_summary.md#ALT-9002]]"
+        },
+        {
+          "utc": "2026-11-04T05:46:58Z",
+          "incidentId": "INC-1",
+          "text": "Four failed multi-factor attempts for amalik from 198.51.100.77 (Romania). [[11_vpn_auth_log.md#L3]] [[11_vpn_auth_log.md#L6]]"
+        },
+        {
+          "utc": "2026-11-04T05:49:12Z",
+          "incidentId": "INC-1",
+          "text": "Login approved. Session VS-20433, address 10.10.3.45 assigned. [[11_vpn_auth_log.md#L7]] [[17_ids_alert_summary.md#ALT-9003]]"
+        },
+        {
+          "utc": "2026-11-04T05:55:31Z",
+          "incidentId": "INC-1",
+          "text": "Kerberos ticket requests for amalik from 10.10.3.45, including the file server. [[12_windows_dc_auth_log.md#L3]] [[12_windows_dc_auth_log.md#L4]]"
+        },
+        {
+          "utc": "2026-11-04T05:58:44Z",
+          "incidentId": "INC-1",
+          "text": "Service ticket for the database server, then a connection to it. [[12_windows_dc_auth_log.md#L5]] [[15_firewall_internal_log.md#L5]]"
+        },
+        {
+          "utc": "2026-11-04T06:03:12Z",
+          "incidentId": "INC-1",
+          "text": "Large SMB session from SRV-FS01 to 10.10.3.45 starts (calculated: the log is written at close, 06:21:19 UTC, minus 1087 seconds). [[15_firewall_internal_log.md#L6]] [[17_ids_alert_summary.md#ALT-9005]]"
+        },
+        {
+          "utc": "2026-11-04T06:42:17Z",
+          "incidentId": "INC-1",
+          "text": "Password reset for amalik from 10.10.3.45. [[12_windows_dc_auth_log.md#L6]] [[16_email_gateway_log.md#L6]]"
+        },
+        {
+          "utc": "2026-11-04T07:12:44Z",
+          "incidentId": "INC-1",
+          "text": "VPN session VS-20433 ends. [[11_vpn_auth_log.md#L8]]"
+        },
+        {
+          "utc": "2026-11-04T07:32:50Z",
+          "incidentId": "INC-1",
+          "text": "amalik locked out after two bad-password logons on LT-FIN-014. [[12_windows_dc_auth_log.md#L7]] [[12_windows_dc_auth_log.md#L9]] [[17_ids_alert_summary.md#ALT-9008]]"
+        }
+      ],
+      "assets": [
+        {
+          "tag": "A-1012",
+          "role": "involved"
+        },
+        {
+          "tag": "A-1001",
+          "role": "involved"
+        },
+        {
+          "tag": "A-1005",
+          "role": "reached"
+        },
+        {
+          "tag": "A-1007",
+          "role": "reached"
+        },
+        {
+          "tag": "A-2014",
+          "role": "involved"
+        }
+      ],
+      "accounts": [
+        "amalik"
+      ],
+      "externals": [
+        {
+          "ip": "198.51.100.77",
+          "geo": "RO",
+          "note": "Hosts orbit-payroll-verify.example"
+        }
+      ],
+      "path": [
+        {
+          "from": "A-2014",
+          "to": "EXT:198.51.100.77",
+          "label": "Connection to the phishing host (click suspected)",
+          "utc": "2026-11-04T04:19:40Z",
+          "evidence": "suspected"
+        },
+        {
+          "from": "EXT:198.51.100.77",
+          "to": "A-1012",
+          "label": "VPN login after failed multi-factor attempts",
+          "utc": "2026-11-04T05:49:12Z",
+          "evidence": "confirmed"
+        },
+        {
+          "from": "A-1012",
+          "to": "A-1001",
+          "label": "Kerberos tickets",
+          "utc": "2026-11-04T05:55:31Z",
+          "evidence": "confirmed"
+        },
+        {
+          "from": "A-1012",
+          "to": "A-1007",
+          "label": "Database connection",
+          "utc": "2026-11-04T05:58:52Z",
+          "evidence": "confirmed"
+        },
+        {
+          "from": "A-1012",
+          "to": "A-1005",
+          "label": "2.4 GB over SMB",
+          "utc": "2026-11-04T06:03:12Z",
+          "evidence": "confirmed"
+        }
+      ],
+      "confirmed": [
+        {
+          "text": "198.51.100.77 failed multi-factor for amalik three times by denial and once by timeout, then was approved as session VS-20433 with address 10.10.3.45. [[11_vpn_auth_log.md#L3]] [[11_vpn_auth_log.md#L7]]",
+          "evidence": "confirmed"
+        },
+        {
+          "text": "Address 10.10.3.45 received Kerberos tickets for the file server and the database server. [[12_windows_dc_auth_log.md#L4]] [[12_windows_dc_auth_log.md#L5]]",
+          "evidence": "confirmed"
+        },
+        {
+          "text": "About 2.41 GB moved from SRV-FS01 to 10.10.3.45, matching the 2.42 GB the VPN session received. [[15_firewall_internal_log.md#L6]] [[11_vpn_auth_log.md#L8]]",
+          "evidence": "confirmed"
+        },
+        {
+          "text": "The amalik password was reset from 10.10.3.45. [[12_windows_dc_auth_log.md#L6]]",
+          "evidence": "confirmed"
+        }
+      ],
+      "suspected": [
+        {
+          "text": "amalik opened the link in the payroll email on LT-FIN-014.",
+          "evidence": "suspected",
+          "assumption": "The 04:19:40 UTC connection to 198.51.100.77 was caused by the link in M-55187. The logs show the connection, not the click. [[14_firewall_perimeter_log.md#L8]] [[17_ids_alert_summary.md#ALT-9002]]"
+        },
+        {
+          "text": "The VPN password came from the fake payroll page.",
+          "evidence": "suspected",
+          "assumption": "The password was typed on that page. No log shows what was typed."
+        }
+      ],
+      "insufficient": [
+        {
+          "text": "Which files were read from SRV-FS01. No file access log is collected for that server.",
+          "evidence": "insufficient"
+        },
+        {
+          "text": "Whether the database was queried. Only a short connection is logged. [[15_firewall_internal_log.md#L5]]",
+          "evidence": "insufficient"
+        }
+      ],
+      "actions": [
+        {
+          "text": "Call the real user on the number in the user directory.",
+          "runbook": "RB-CRED-02",
+          "step": 1
+        },
+        {
+          "text": "Disable the account and end all active VPN sessions.",
+          "runbook": "RB-CRED-02",
+          "step": 2
+        },
+        {
+          "text": "Block 198.51.100.77 at the perimeter firewall.",
+          "runbook": "RB-CRED-02",
+          "step": 3
+        },
+        {
+          "text": "Block the transfer destination and keep the evidence. Do not reboot SRV-FS01.",
+          "runbook": "RB-EXFIL-04",
+          "step": 3
+        },
+        {
+          "text": "Record that it is unknown which files were read.",
+          "runbook": "RB-EXFIL-04",
+          "step": 5
+        },
+        {
+          "text": "Quarantine M-55187 from all mailboxes.",
+          "runbook": "RB-PHISH-01",
+          "step": 2
+        }
+      ],
+      "inform": [
+        {
+          "who": "CISO Hamza Qureshi",
+          "contact": "+92-300-5550001",
+          "limitMinutes": 15,
+          "how": "Phone call"
+        },
+        {
+          "who": "IT Director Farhan Ali",
+          "contact": "+92-300-5550002",
+          "limitMinutes": 30,
+          "how": "Phone call"
+        },
+        {
+          "who": "Legal and Compliance Mariam Chaudhry",
+          "contact": "legal@orbitlogistics.example",
+          "limitMinutes": 60,
+          "how": "Email and phone, finance and HR data may be involved"
+        },
+        {
+          "who": "Data owner Saima Noor",
+          "limitMinutes": 60,
+          "how": "Phone call"
+        }
+      ]
+    },
+    {
+      "id": "INC-2",
+      "title": "SQL injection against the public web server",
+      "severity": "P2",
+      "severityWhy": "Web application attack, success suspected, on SRV-WEB01 (Medium) is P2. [[03_severity_matrix.md#Web application attack, success suspected or confirmed]]",
+      "summary": "192.0.2.150 ran sqlmap against the order search page. Most requests returned errors, but one request returned a large 200 response.",
+      "timeline": [
+        {
+          "utc": "2026-11-04T06:05:12Z",
+          "incidentId": "INC-2",
+          "text": "First sqlmap request to the order search page, answered with 500. [[13_web_server_log.md#L6]] [[17_ids_alert_summary.md#ALT-9004]]"
+        },
+        {
+          "utc": "2026-11-04T06:06:02Z",
+          "incidentId": "INC-2",
+          "text": "A UNION SELECT request is answered with 200 and 48,213 bytes. [[13_web_server_log.md#L9]]"
+        }
+      ],
+      "assets": [
+        {
+          "tag": "A-1010",
+          "role": "reached"
+        }
+      ],
+      "accounts": [],
+      "externals": [
+        {
+          "ip": "192.0.2.150",
+          "geo": "",
+          "note": "sqlmap user agent"
+        }
+      ],
+      "path": [
+        {
+          "from": "EXT:192.0.2.150",
+          "to": "A-1010",
+          "label": "SQL injection requests",
+          "utc": "2026-11-04T06:05:12Z",
+          "evidence": "confirmed"
+        }
+      ],
+      "confirmed": [
+        {
+          "text": "Five requests with the sqlmap user agent hit the order search page. Four got 500 and one got 200 with 48,213 bytes. [[13_web_server_log.md#L6]] [[13_web_server_log.md#L9]]",
+          "evidence": "confirmed"
+        }
+      ],
+      "suspected": [
+        {
+          "text": "The 200 response carried data from the users table.",
+          "evidence": "suspected",
+          "assumption": "A large 200 reply to a UNION SELECT request means the query ran. The log does not show the response body."
+        }
+      ],
+      "insufficient": [
+        {
+          "text": "Whether the database server saw matching queries. Its logs are not forwarded to the SOC.",
+          "evidence": "insufficient"
+        }
+      ],
+      "actions": [
+        {
+          "text": "Block 192.0.2.150 at the perimeter firewall.",
+          "runbook": "RB-WEB-03",
+          "step": 2
+        },
+        {
+          "text": "Ask the web team to review the code of the attacked page.",
+          "runbook": "RB-WEB-03",
+          "step": 4
+        }
+      ],
+      "inform": [
+        {
+          "who": "Security Manager Noman Javed",
+          "contact": "+92-300-5550003",
+          "limitMinutes": 60,
+          "how": "Phone call"
+        },
+        {
+          "who": "Applications team (system owner)",
+          "limitMinutes": 120,
+          "how": "Email"
+        }
+      ]
+    },
+    {
+      "id": "INC-3",
+      "title": "Port scan and probing from outside",
+      "severity": "P4",
+      "severityWhy": "Unapproved scanning against SRV-WEB01 (Medium) is P4. [[03_severity_matrix.md#Unapproved scanning or reconnaissance]]",
+      "summary": "192.0.2.88 tried six ports on the web server: five were denied and port 443 was allowed. It then probed for admin pages that do not exist.",
+      "timeline": [
+        {
+          "utc": "2026-11-04T03:10:05Z",
+          "incidentId": "INC-3",
+          "text": "Five connection attempts to ports 22, 23, 3389, 445 and 8080 are denied. [[14_firewall_perimeter_log.md#L1]] [[14_firewall_perimeter_log.md#L5]] [[17_ids_alert_summary.md#ALT-9001]]"
+        },
+        {
+          "utc": "2026-11-04T03:10:21Z",
+          "incidentId": "INC-3",
+          "text": "Requests for /admin, /phpmyadmin/ and /.env all return 404. [[13_web_server_log.md#L1]] [[13_web_server_log.md#L3]]"
+        }
+      ],
+      "assets": [
+        {
+          "tag": "A-1010",
+          "role": "involved"
+        }
+      ],
+      "accounts": [],
+      "externals": [
+        {
+          "ip": "192.0.2.88",
+          "geo": "",
+          "note": "Probe user agent"
+        }
+      ],
+      "path": [
+        {
+          "from": "EXT:192.0.2.88",
+          "to": "A-1010",
+          "label": "Port scan and probing",
+          "utc": "2026-11-04T03:10:05Z",
+          "evidence": "confirmed"
+        }
+      ],
+      "confirmed": [
+        {
+          "text": "Five ports were refused and only port 443 was allowed. [[14_firewall_perimeter_log.md#L6]]",
+          "evidence": "confirmed"
+        }
+      ],
+      "suspected": [],
+      "insufficient": [],
+      "actions": [
+        {
+          "text": "Block 192.0.2.88 at the perimeter firewall.",
+          "runbook": "RB-SCAN-05",
+          "step": 3
+        },
+        {
+          "text": "Watch the source for the next 24 hours.",
+          "runbook": "RB-SCAN-05",
+          "step": 6
+        }
+      ],
+      "inform": [
+        {
+          "who": "SOC queue",
+          "limitMinutes": null,
+          "how": "Ticket only, next business day"
+        }
+      ]
+    }
+  ],
+  "missingSources": [
+    {
+      "name": "SRV-FS01 file access log",
+      "why": "Agent not installed, so it is unknown which files were read."
+    },
+    {
+      "name": "SRV-DB01 login and query log",
+      "why": "Not forwarded to the SOC."
+    },
+    {
+      "name": "Web proxy log",
+      "why": "No proxy is used."
+    },
+    {
+      "name": "Laptop endpoint security logs",
+      "why": "Not collected."
+    },
+    {
+      "name": "Internal firewall, 06:32:00 to 07:28:59 UTC",
+      "why": "Device rebooted for an update. Session VS-20433 was still open until 07:12:44 UTC, so activity in that gap is not visible."
+    },
+    {
+      "name": "Domain controller outside 03:00 to 19:00 UTC",
+      "why": "No events before 03:00 or after 19:00 UTC."
+    }
+  ],
+  "closedHarmless": [
+    {
+      "what": "Internal scan from SCAN01",
+      "changeId": "CHG-2026-1104-02",
+      "why": "Same scanner, target ranges and time window (21:00 to 23:00 PKT). [[17_ids_alert_summary.md#ALT-9006]] [[05_change_calendar.md#CHG-2026-1104-02]]"
+    },
+    {
+      "what": "Remote desktop to SRV-DC01 by braza",
+      "changeId": "CHG-2026-1104-03",
+      "why": "Same person, system and window (22:00 to 23:30 PKT). [[17_ids_alert_summary.md#ALT-9007]] [[05_change_calendar.md#CHG-2026-1104-03]]"
+    }
+  ]
+}

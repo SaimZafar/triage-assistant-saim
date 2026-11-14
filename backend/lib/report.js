@@ -29,7 +29,7 @@ Evidence labels:
 - A gap in one log does not affect events that another log records. In the "insufficient" item for a gap, name only what that log hides (for example other sessions in that window) and do not say that events recorded by another log are unconfirmed.
 - A transfer that a firewall line shows is confirmed. What is suspected is who did it and which files were read. Do not call the transfer itself suspected in the summary.
 - Never write that data was stolen or leaked unless a log shows the data moving. A large transfer shows a transfer, not which files were read.
-- The summary must follow the same labels: write suspected things as suspected ("is suspected to", "may have"), never as fact. Do not write that an attack "was successful" unless a log line shows it directly.
+- The summary must follow the same labels: write suspected things as suspected ("is suspected to", "may have"), never as fact. Do not write that an attack "was successful" unless a log line shows it directly. Do not write that the phishing email "led to" a compromise: write that it is suspected to have led to it. Describe each incident on its own and never join activity from different source IPs into one actor.
 
 Format rules:
 
@@ -76,6 +76,24 @@ const GUESS_PATTERNS = [
 ]
 
 const needsGuess = text => GUESS_PATTERNS.some(p => p.test(text))
+
+// Runbook steps that cannot apply to this data. Step 2 of the scanning runbook closes an approved scan
+// and step 4 handles an internal source, but the scan here is external and not approved.
+const SKIP_STEPS = new Set(['10_runbook_scanning_recon.md#S2', '10_runbook_scanning_recon.md#S4'])
+
+// Reads the numbered steps of a runbook file
+function runbookSteps(file) {
+  try {
+    return fs
+      .readFileSync(path.join(DATA, file), 'utf8')
+      .split(/\r?\n/)
+      .map(l => l.match(/^(\d+)\.\s+(.+)$/))
+      .filter(Boolean)
+      .map(m => ({ step: Number(m[1]), text: m[2].trim() }))
+  } catch {
+    return []
+  }
+}
 
 // Reads the runbook ID (for example RB-CRED-02) from the first line of the runbook file
 function runbookId(ref) {
@@ -222,6 +240,36 @@ export function validateReport(report) {
       citations
     })
   }
+
+  // The model leaves out different runbook steps on every run. For each runbook it used, list every step.
+  const used = new Map() // incident -> runbook files
+  for (const a of actions) {
+    const file = a.citations.find(isRunbookStep)?.split('#')[0]
+    if (!file) continue
+    if (!used.has(a.incident)) used.set(a.incident, new Set())
+    used.get(a.incident).add(file)
+  }
+  let added = 0
+  for (const [incident, files] of used) {
+    for (const file of files) {
+      for (const { step, text } of runbookSteps(file)) {
+        const ref = `${file}#S${step}`
+        if (seen.has(`${incident}|${ref}`) || SKIP_STEPS.has(ref) || !isValidRef(ref)) continue
+        seen.add(`${incident}|${ref}`)
+        actions.push({ incident, text, runbook: runbookId(ref) ?? '', step, citations: [ref] })
+        added++
+      }
+    }
+  }
+  if (added) notes.push(`Actions: added ${added} runbook step(s) the model left out.`)
+  const incidentOrder = [...new Set(actions.map(a => a.incident))]
+  const fileOf = a => a.citations.find(isRunbookStep) ?? ''
+  actions.sort(
+    (x, y) =>
+      incidentOrder.indexOf(x.incident) - incidentOrder.indexOf(y.incident) ||
+      fileOf(x).localeCompare(fileOf(y)) ||
+      x.step - y.step
+  )
 
   // People to inform: only from the escalation sheet, for the severity of the incident (rule 5.2)
   const inform = []

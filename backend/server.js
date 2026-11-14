@@ -6,6 +6,7 @@ import { buildCorpus, DATA, FILES } from './lib/corpus.js'
 import { askGemini } from './lib/gemini.js'
 import { ASK_SYSTEM } from './lib/prompts.js'
 import { validateResult } from './lib/validate.js'
+import { REPORT_SYSTEM, validateReport } from './lib/report.js'
 
 if (!process.env.GEMINI_API_KEY) {
   console.error('Missing GEMINI_API_KEY. Put it in backend/.env or in the host settings.')
@@ -47,6 +48,42 @@ app.post('/api/ask', async (req, res) => {
     res.status(e.status ?? 500).json({ message: e.message, retryAfter: e.retryAfter })
   }
 })
+
+// The report is built from the same 20 files every time, so it is generated once and kept in memory.
+// Add ?refresh=1 to build it again. Requests that arrive while it is being built share the same call.
+let reportCache = null
+let reportPending = null
+
+async function buildReport() {
+  const started = Date.now()
+  const raw = await askGemini(REPORT_SYSTEM, `FILES:\n${CORPUS}\n\nWrite the incident report.`, {
+    timeoutMs: 150_000,
+    maxOutputTokens: 32768
+  })
+  const checked = validateReport(raw)
+  console.log(
+    `report ok in ${Date.now() - started}ms, ${checked.removedCitations.length} citation(s) removed, ${checked.notes.length} note(s)`
+  )
+  return { ...checked, generated_at: new Date().toISOString() }
+}
+
+async function reportHandler(req, res) {
+  if (reportCache && req.query.refresh !== '1') return res.json({ ...reportCache, cached: true })
+  try {
+    if (!reportPending) {
+      reportPending = buildReport().finally(() => {
+        reportPending = null
+      })
+    }
+    reportCache = await reportPending
+    res.json({ ...reportCache, cached: false })
+  } catch (e) {
+    console.error(`report failed: ${e.message}`)
+    res.status(e.status ?? 500).json({ message: e.message, retryAfter: e.retryAfter })
+  }
+}
+
+app.route('/api/report').get(reportHandler).post(reportHandler)
 
 app.use((req, res) => res.status(404).json({ message: 'Not found' }))
 

@@ -129,6 +129,16 @@ app.get('/api/report/raw', (req, res) => {
   res.json(reportCache)
 })
 
+// Serve the built frontend (frontend/dist) from this same server
+const DIST = path.join(here, '..', 'frontend', 'dist')
+if (fs.existsSync(DIST)) {
+  app.use(express.static(DIST))
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api')) return next()
+    res.sendFile(path.join(DIST, 'index.html'))
+  })
+}
+
 app.use((req, res) => res.status(404).json({ message: 'Not found' }))
 
 app.use((err, req, res, next) => {

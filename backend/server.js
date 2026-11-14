@@ -149,5 +149,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Server error.' })
 })
 
-const port = process.env.PORT || 8000
-app.listen(port, () => console.log(`Backend running on port ${port}`))
+export default app
+
+if (!process.env.VERCEL) {
+  const port = process.env.PORT || 8000
+  app.listen(port, () => console.log(`Backend running on port ${port}`))
+}

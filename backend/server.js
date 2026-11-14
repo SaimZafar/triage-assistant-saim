@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { buildCorpus, DATA, FILES } from './lib/corpus.js'
 import { askGemini } from './lib/gemini.js'
 import { ASK_SYSTEM } from './lib/prompts.js'
@@ -13,6 +14,8 @@ if (!process.env.GEMINI_API_KEY) {
   process.exit(1)
 }
 
+const here = path.dirname(fileURLToPath(import.meta.url))
+const SAVED_REPORT = path.join(here, 'saved-report.json')
 const CORPUS = buildCorpus()
 const MAX_QUESTION = 2000
 
@@ -36,7 +39,6 @@ app.post('/api/ask', async (req, res) => {
   if (question.length > MAX_QUESTION) {
     return res.status(400).json({ message: `Question is too long (max ${MAX_QUESTION} characters).` })
   }
-
   const started = Date.now()
   try {
     const result = await askGemini(ASK_SYSTEM, `FILES:\n${CORPUS}\n\nQUESTION: ${question}`)
@@ -49,14 +51,24 @@ app.post('/api/ask', async (req, res) => {
   }
 })
 
-// The report is built from the same 20 files every time, so it is generated once and kept in memory.
-// Add ?refresh=1 to build it again. Requests that arrive while it is being built share the same call.
-// A report that fails the quality check below is never cached, so the last good report stays.
-let reportCache = null
+// The report is built from the same 20 files every time, so it is kept in memory.
+// On start it loads saved-report.json (a snapshot of an earlier live run, already checked by the validator),
+// so the report is instant and uses no Gemini quota. A live rebuild needs ?refresh=1 and ALLOW_REFRESH=1
+// in the environment, so the public server cannot be used to burn the Gemini quota.
+function loadSavedReport() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(SAVED_REPORT, 'utf8').replace(/^\uFEFF/, ''))
+    console.log('Loaded saved-report.json')
+    return { ...raw, source: 'saved snapshot of an earlier live run' }
+  } catch {
+    return null
+  }
+}
+
+let reportCache = loadSavedReport()
 let reportPending = null
 
 // A usable report has a timeline, confirmed claims, actions and contacts.
-// If the model skipped the citation format, the validator drops them all and one of these is empty.
 function reportProblems(report) {
   const problems = []
   if (report.timeline.length === 0) problems.push('no timeline')
@@ -68,7 +80,6 @@ function reportProblems(report) {
 
 async function buildReport() {
   const started = Date.now()
-
   for (let attempt = 1; attempt <= 2; attempt++) {
     // only the main model: the backup models follow the citation rules less well
     const raw = await askGemini(REPORT_SYSTEM, `FILES:\n${CORPUS}\n\nWrite the incident report.`, {
@@ -77,26 +88,22 @@ async function buildReport() {
       primaryOnly: true,
       rounds: 6
     })
-
     const checked = validateReport(raw)
     const problems = reportProblems(checked)
-
     if (problems.length === 0) {
       console.log(
         `report ok in ${Date.now() - started}ms, ${checked.removedCitations.length} citation(s) removed, ${checked.notes.length} note(s)`
       )
-      return { ...checked, generated_at: new Date().toISOString() }
+      return { ...checked, generated_at: new Date().toISOString(), source: 'live' }
     }
-
     console.warn(`report attempt ${attempt} rejected: ${problems.join(', ')}`)
   }
-
   throw Object.assign(new Error('The report came back incomplete. Try again.'), { status: 502, retryAfter: 15 })
 }
 
 async function reportHandler(req, res) {
-  if (reportCache && req.query.refresh !== '1') return res.json({ ...reportCache, cached: true })
-
+  const refresh = req.query.refresh === '1' && process.env.ALLOW_REFRESH === '1'
+  if (reportCache && !refresh) return res.json({ ...reportCache, cached: true })
   try {
     if (!reportPending) {
       reportPending = buildReport().finally(() => {

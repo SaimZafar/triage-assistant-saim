@@ -1,0 +1,1011 @@
+{
+  "summary": "Three separate security incidents were identified. An external IP performed port scanning and a suspected SQL injection attack against the public web server, potentially exfiltrating data. A phishing email led to the compromise of Ayesha Malik's account, followed by a VPN login from an unusual location and a large data transfer from the finance file server. The internal firewall log was unavailable for a period, potentially hiding further internal activity during the credential compromise. Two other activities were identified as approved vulnerability scanning and remote desktop for patching.",
+  "timeline": [
+    {
+      "time_utc": "2026-11-04T03:10:05Z",
+      "event": "Perimeter firewall denied TCP connections from 192.0.2.88 to 203.0.113.10 (SRV-WEB01) on ports 22, 23, 3389, 445, and 8080.",
+      "citations": [
+        "14_firewall_perimeter_log.md#L1",
+        "14_firewall_perimeter_log.md#L2",
+        "14_firewall_perimeter_log.md#L3",
+        "14_firewall_perimeter_log.md#L4",
+        "14_firewall_perimeter_log.md#L5"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T03:10:21Z",
+      "event": "Perimeter firewall allowed a TCP connection from 192.0.2.88 to 203.0.113.10 (SRV-WEB01) on port 443.",
+      "citations": [
+        "14_firewall_perimeter_log.md#L6"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T03:10:21Z",
+      "event": "SRV-WEB01 received GET requests for /admin, /phpmyadmin/, and /.env from 192.0.2.88, which returned 404 errors.",
+      "citations": [
+        "13_web_server_log.md#L1",
+        "13_web_server_log.md#L2",
+        "13_web_server_log.md#L3"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T03:10:22Z",
+      "event": "Perimeter IDS raised alert ALT-9001 for a port scan from 192.0.2.88 against 203.0.113.10 (SRV-WEB01).",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9001"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T04:12:07Z",
+      "event": "Email gateway delivered phishing message M-55187 from payroll-update@orbit-logistlcs.example to amalik@orbitlogistics.example, sraheel@orbitlogistics.example, and utariq@orbitlogistics.example. The email had a URL host orbit-payroll-verify.example and failed SPF checks.",
+      "citations": [
+        "16_email_gateway_log.md#L2",
+        "16_email_gateway_log.md#L3",
+        "16_email_gateway_log.md#L4"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T04:19:40Z",
+      "event": "Perimeter firewall allowed a TCP connection from 10.20.5.14 (LT-FIN-014, Ayesha Malik's laptop) to 198.51.100.77 on port 443.",
+      "citations": [
+        "14_firewall_perimeter_log.md#L8"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T04:19:41Z",
+      "event": "Perimeter IDS raised alert ALT-9002 for host 10.20.5.14 connecting to 198.51.100.77, which threat intelligence identified as hosting the newly registered domain orbit-payroll-verify.example.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9002"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T05:46:58Z",
+      "event": "VPN authentication failed for user amalik from 198.51.100.77 (Romania) due to MFA push denied.",
+      "citations": [
+        "11_vpn_auth_log.md#L3"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T05:47:31Z",
+      "event": "VPN authentication failed for user amalik from 198.51.100.77 (Romania) due to MFA push denied.",
+      "citations": [
+        "11_vpn_auth_log.md#L4"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T05:48:02Z",
+      "event": "VPN authentication failed for user amalik from 198.51.100.77 (Romania) due to MFA push timeout.",
+      "citations": [
+        "11_vpn_auth_log.md#L5"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T05:48:40Z",
+      "event": "VPN authentication failed for user amalik from 198.51.100.77 (Romania) due to MFA push denied.",
+      "citations": [
+        "11_vpn_auth_log.md#L6"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T05:49:12Z",
+      "event": "VPN authentication succeeded for user amalik from 198.51.100.77 (Romania), assigned IP 10.10.3.45.",
+      "citations": [
+        "11_vpn_auth_log.md#L7"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T05:49:13Z",
+      "event": "VPN monitor raised alert ALT-9003 for VPN login by amalik from a new country (RO), source 198.51.100.77.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9003"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T05:55:31Z",
+      "event": "SRV-DC01 recorded a Kerberos TGT request for account ORBIT\\amalik from 10.10.3.45 (VPN assigned IP).",
+      "citations": [
+        "12_windows_dc_auth_log.md#L3"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T05:55:33Z",
+      "event": "SRV-DC01 recorded a Kerberos service ticket request for account ORBIT\\amalik for service cifs/FS01.orbit.local from 10.10.3.45.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L4"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T05:58:44Z",
+      "event": "SRV-DC01 recorded a Kerberos service ticket request for account ORBIT\\amalik for service MSSQLSvc/DB01.orbit.local:1433 from 10.10.3.45.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L5"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T06:03:52Z",
+      "event": "Internal firewall session started from 10.10.3.45 (amalik VPN) to 10.10.1.20 (SRV-FS01) on port 445.",
+      "citations": [
+        "15_firewall_internal_log.md#L6"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T06:05:10Z",
+      "event": "Perimeter firewall allowed a TCP connection from 192.0.2.150 to 203.0.113.10 (SRV-WEB01) on port 443.",
+      "citations": [
+        "14_firewall_perimeter_log.md#L12"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T06:05:12Z",
+      "event": "SRV-WEB01 received a GET request with a SQL injection pattern '/orders/search?id=1%27' from 192.0.2.150, which returned a 500 error.",
+      "citations": [
+        "13_web_server_log.md#L6"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T06:05:13Z",
+      "event": "Web filter raised alert ALT-9004 for a SQL injection pattern against SRV-WEB01 from 192.0.2.150.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9004"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T06:06:02Z",
+      "event": "SRV-WEB01 received a GET request with a SQL injection pattern '/orders/search?id=-1%20UNION%20SELECT%20NULL,username,password%20FROM%20users--' from 192.0.2.150, which returned a 200 response with a large size (48213 bytes).",
+      "citations": [
+        "13_web_server_log.md#L9"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T06:21:19Z",
+      "event": "Internal firewall session from 10.10.3.45 (amalik VPN) to 10.10.1.20 (SRV-FS01) on port 445 closed, with 2.4 GB transferred from the server to the client.",
+      "citations": [
+        "15_firewall_internal_log.md#L6"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T06:21:20Z",
+      "event": "Internal IDS raised alert ALT-9005 for a large SMB transfer (about 2.4 GB) from SRV-FS01 to VPN pool address 10.10.3.45.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9005"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T06:42:17Z",
+      "event": "SRV-DC01 recorded a password reset attempt for account ORBIT\\amalik by ORBIT\\amalik from 10.10.3.45 (VPN assigned IP).",
+      "citations": [
+        "12_windows_dc_auth_log.md#L6"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T07:12:44Z",
+      "event": "VPN session VS-20433 for user amalik ended.",
+      "citations": [
+        "11_vpn_auth_log.md#L8"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T07:31:12Z",
+      "event": "SRV-DC01 recorded a failed logon for account ORBIT\\amalik from 10.20.5.14 (LT-FIN-014) due to a bad password.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L7"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T07:31:48Z",
+      "event": "SRV-DC01 recorded a failed logon for account ORBIT\\amalik from 10.20.5.14 (LT-FIN-014) due to a bad password.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L8"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T07:32:50Z",
+      "event": "SRV-DC01 recorded an account lockout for ORBIT\\amalik.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L9"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T07:32:51Z",
+      "event": "DC monitor raised alert ALT-9008 for account lockout for amalik.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9008"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T16:05:29Z",
+      "event": "Internal IDS raised alert ALT-9006 for a port scan from 10.10.9.50 (SCAN01) against servers in 10.10.1.0/24 and 10.10.2.0/24.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9006"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T17:31:05Z",
+      "event": "SRV-DC01 recorded a successful remote desktop logon for account ORBIT\\braza from 10.10.3.18 (VPN assigned IP).",
+      "citations": [
+        "12_windows_dc_auth_log.md#L11"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T17:31:09Z",
+      "event": "SRV-DC01 recorded special privileges assigned to account ORBIT\\braza.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L12"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T17:31:10Z",
+      "event": "DC monitor raised alert ALT-9007 for remote desktop to SRV-DC01 by braza outside office hours.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9007"
+      ]
+    },
+    {
+      "time_utc": "2026-11-04T18:24:12Z",
+      "event": "SRV-DC01 recorded a logoff for account ORBIT\\braza from DC01.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L13"
+      ]
+    }
+  ],
+  "affected": [
+    {
+      "name": "SRV-WEB01",
+      "kind": "asset",
+      "note": "Target of external scanning and web application attack.",
+      "citations": [
+        "02_asset_inventory.md#A-1010",
+        "13_web_server_log.md#L1",
+        "13_web_server_log.md#L6"
+      ]
+    },
+    {
+      "name": "amalik",
+      "kind": "account",
+      "note": "Account compromised via phishing, used for unauthorized VPN access and internal activity.",
+      "citations": [
+        "18_user_directory.md#amalik",
+        "11_vpn_auth_log.md#L7",
+        "12_windows_dc_auth_log.md#L3"
+      ]
+    },
+    {
+      "name": "LT-FIN-014",
+      "kind": "asset",
+      "note": "Laptop connected to a phishing link.",
+      "citations": [
+        "02_asset_inventory.md#A-2014",
+        "14_firewall_perimeter_log.md#L8"
+      ]
+    },
+    {
+      "name": "SRV-VPN01",
+      "kind": "asset",
+      "note": "Used for unauthorized VPN access by compromised account.",
+      "citations": [
+        "02_asset_inventory.md#A-1012",
+        "11_vpn_auth_log.md#L7"
+      ]
+    },
+    {
+      "name": "SRV-FS01",
+      "kind": "asset",
+      "note": "Accessed by compromised account, source of large data transfer.",
+      "citations": [
+        "02_asset_inventory.md#A-1005",
+        "12_windows_dc_auth_log.md#L4",
+        "15_firewall_internal_log.md#L6"
+      ]
+    },
+    {
+      "name": "SRV-DB01",
+      "kind": "asset",
+      "note": "Accessed by compromised account.",
+      "citations": [
+        "02_asset_inventory.md#A-1007",
+        "12_windows_dc_auth_log.md#L5"
+      ]
+    },
+    {
+      "name": "sraheel",
+      "kind": "account",
+      "note": "Recipient of phishing email.",
+      "citations": [
+        "18_user_directory.md#sraheel",
+        "16_email_gateway_log.md#L3"
+      ]
+    },
+    {
+      "name": "utariq",
+      "kind": "account",
+      "note": "Recipient of phishing email.",
+      "citations": [
+        "18_user_directory.md#utariq",
+        "16_email_gateway_log.md#L4"
+      ]
+    },
+    {
+      "name": "SRV-DC01",
+      "kind": "asset",
+      "note": "Accessed by compromised account for Kerberos tickets and password reset.",
+      "citations": [
+        "02_asset_inventory.md#A-1001",
+        "12_windows_dc_auth_log.md#L3",
+        "12_windows_dc_auth_log.md#L6"
+      ]
+    }
+  ],
+  "severity": [
+    {
+      "incident": "External Scanning and Reconnaissance",
+      "type": "Unapproved scanning or reconnaissance",
+      "asset": "SRV-WEB01",
+      "criticality": "Medium",
+      "severity": "P4",
+      "steps": [
+        "Unapproved scanning or reconnaissance, SRV-WEB01 (Medium): P4."
+      ],
+      "citations": [
+        "03_severity_matrix.md",
+        "02_asset_inventory.md#A-1010"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "type": "Credential compromise (account used by an attacker)",
+      "asset": "SRV-FS01",
+      "criticality": "High",
+      "severity": "P1",
+      "steps": [
+        "Credential compromise, SRV-FS01 (High): P2.",
+        "Data exfiltration, SRV-FS01 (High): P1."
+      ],
+      "citations": [
+        "03_severity_matrix.md",
+        "02_asset_inventory.md#A-1005"
+      ]
+    },
+    {
+      "incident": "Web Application Attack (SQL Injection)",
+      "type": "Web application attack, success suspected or confirmed",
+      "asset": "SRV-WEB01",
+      "criticality": "Medium",
+      "severity": "P2",
+      "steps": [
+        "Web application attack, success suspected or confirmed, SRV-WEB01 (Medium): P2."
+      ],
+      "citations": [
+        "03_severity_matrix.md",
+        "02_asset_inventory.md#A-1010"
+      ]
+    }
+  ],
+  "overall_severity": "P1",
+  "confirmed": [
+    {
+      "text": "Perimeter firewall logs show denied TCP connections from 192.0.2.88 to 203.0.113.10 (SRV-WEB01) on multiple ports.",
+      "citations": [
+        "14_firewall_perimeter_log.md#L1",
+        "14_firewall_perimeter_log.md#L2",
+        "14_firewall_perimeter_log.md#L3",
+        "14_firewall_perimeter_log.md#L4",
+        "14_firewall_perimeter_log.md#L5"
+      ]
+    },
+    {
+      "text": "Perimeter firewall logs show an allowed TCP connection from 192.0.2.88 to 203.0.113.10 (SRV-WEB01) on port 443.",
+      "citations": [
+        "14_firewall_perimeter_log.md#L6"
+      ]
+    },
+    {
+      "text": "SRV-WEB01 logs show GET requests for /admin, /phpmyadmin/, and /.env from 192.0.2.88, which returned 404 responses.",
+      "citations": [
+        "13_web_server_log.md#L1",
+        "13_web_server_log.md#L2",
+        "13_web_server_log.md#L3"
+      ]
+    },
+    {
+      "text": "IDS alert ALT-9001 reports a port scan from 192.0.2.88 against 203.0.113.10 (SRV-WEB01).",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9001"
+      ]
+    },
+    {
+      "text": "Email gateway logs show message M-55187 delivered to amalik@orbitlogistics.example, sraheel@orbitlogistics.example, and utariq@orbitlogistics.example.",
+      "citations": [
+        "16_email_gateway_log.md#L2",
+        "16_email_gateway_log.md#L3",
+        "16_email_gateway_log.md#L4"
+      ]
+    },
+    {
+      "text": "Email gateway logs show message M-55187 from payroll-update@orbit-logistlcs.example with URL host orbit-payroll-verify.example, SPF failed, and DKIM none.",
+      "citations": [
+        "16_email_gateway_log.md#L2",
+        "16_email_gateway_log.md#L3",
+        "16_email_gateway_log.md#L4"
+      ]
+    },
+    {
+      "text": "Perimeter firewall logs show an allowed TCP connection from 10.20.5.14 (LT-FIN-014) to 198.51.100.77 on port 443.",
+      "citations": [
+        "14_firewall_perimeter_log.md#L8"
+      ]
+    },
+    {
+      "text": "IDS alert ALT-9002 reports host 10.20.5.14 connected to 198.51.100.77, which threat intelligence identifies as hosting orbit-payroll-verify.example.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9002"
+      ]
+    },
+    {
+      "text": "VPN authentication logs show four failed MFA pushes for user amalik from 198.51.100.77 (Romania).",
+      "citations": [
+        "11_vpn_auth_log.md#L3",
+        "11_vpn_auth_log.md#L4",
+        "11_vpn_auth_log.md#L5",
+        "11_vpn_auth_log.md#L6"
+      ]
+    },
+    {
+      "text": "VPN authentication logs show a successful MFA push for user amalik from 198.51.100.77 (Romania), assigned IP 10.10.3.45.",
+      "citations": [
+        "11_vpn_auth_log.md#L7"
+      ]
+    },
+    {
+      "text": "IDS alert ALT-9003 reports a VPN login by amalik from a new country (RO), source 198.51.100.77.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9003"
+      ]
+    },
+    {
+      "text": "SRV-DC01 logs show a Kerberos TGT request for ORBIT\\amalik from 10.10.3.45.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L3"
+      ]
+    },
+    {
+      "text": "SRV-DC01 logs show a Kerberos service ticket request for ORBIT\\amalik for cifs/FS01.orbit.local from 10.10.3.45.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L4"
+      ]
+    },
+    {
+      "text": "SRV-DC01 logs show a Kerberos service ticket request for ORBIT\\amalik for MSSQLSvc/DB01.orbit.local:1433 from 10.10.3.45.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L5"
+      ]
+    },
+    {
+      "text": "Internal firewall logs show a session from 10.10.3.45 to 10.10.1.20 (SRV-FS01) on port 445 with 2.4 GB transferred from the server to the client.",
+      "citations": [
+        "15_firewall_internal_log.md#L6"
+      ]
+    },
+    {
+      "text": "IDS alert ALT-9005 reports a large SMB transfer (about 2.4 GB) from SRV-FS01 to VPN pool address 10.10.3.45.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9005"
+      ]
+    },
+    {
+      "text": "SRV-DC01 logs show a password reset attempt for ORBIT\\amalik by ORBIT\\amalik from 10.10.3.45.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L6"
+      ]
+    },
+    {
+      "text": "SRV-DC01 logs show two failed logons for ORBIT\\amalik from 10.20.5.14 (LT-FIN-014) due to bad passwords.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L7",
+        "12_windows_dc_auth_log.md#L8"
+      ]
+    },
+    {
+      "text": "SRV-DC01 logs show an account lockout for ORBIT\\amalik.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L9"
+      ]
+    },
+    {
+      "text": "IDS alert ALT-9008 reports an account lockout for amalik.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9008"
+      ]
+    },
+    {
+      "text": "Perimeter firewall logs show an allowed TCP connection from 192.0.2.150 to 203.0.113.10 (SRV-WEB01) on port 443.",
+      "citations": [
+        "14_firewall_perimeter_log.md#L12"
+      ]
+    },
+    {
+      "text": "SRV-WEB01 logs show GET requests with SQL injection patterns from 192.0.2.150.",
+      "citations": [
+        "13_web_server_log.md#L6",
+        "13_web_server_log.md#L7",
+        "13_web_server_log.md#L8",
+        "13_web_server_log.md#L9",
+        "13_web_server_log.md#L10"
+      ]
+    },
+    {
+      "text": "Web filter alert ALT-9004 reports a SQL injection pattern against SRV-WEB01 from 192.0.2.150.",
+      "citations": [
+        "17_ids_alert_summary.md#ALT-9004"
+      ]
+    },
+    {
+      "text": "SRV-WEB01 logs show a GET request with a SQL injection pattern returning a 200 response with a large size (48213 bytes).",
+      "citations": [
+        "13_web_server_log.md#L9"
+      ]
+    }
+  ],
+  "suspected": [
+    {
+      "text": "The connection from LT-FIN-014 to orbit-payroll-verify.example is suspected to be Ayesha Malik clicking the phishing link.",
+      "assumption": "The connection from Ayesha Malik's laptop to the phishing link domain indicates the user clicked the link.",
+      "citations": [
+        "14_firewall_perimeter_log.md#L8",
+        "17_ids_alert_summary.md#ALT-9002"
+      ]
+    },
+    {
+      "text": "The VPN login by amalik from Romania (198.51.100.77) after multiple MFA push denials is suspected to be an attacker using Ayesha Malik's compromised credentials.",
+      "assumption": "Multiple rejected MFA pushes followed by an approved push from a new country is treated as a sign of a stolen password.",
+      "citations": [
+        "11_vpn_auth_log.md#L3",
+        "11_vpn_auth_log.md#L4",
+        "11_vpn_auth_log.md#L5",
+        "11_vpn_auth_log.md#L6",
+        "11_vpn_auth_log.md#L7",
+        "17_ids_alert_summary.md#ALT-9003",
+        "01_company_security_rules.md#R6.1"
+      ]
+    },
+    {
+      "text": "The Kerberos TGT request, service ticket requests for SRV-FS01 and SRV-DB01, and the password reset attempt for amalik from the VPN assigned IP 10.10.3.45 are suspected to be actions by the attacker using the compromised amalik account.",
+      "assumption": "The VPN session from an unusual location is attributed to an attacker, therefore subsequent activity from that VPN IP using the same account is also attributed to the attacker.",
+      "citations": [
+        "12_windows_dc_auth_log.md#L3",
+        "12_windows_dc_auth_log.md#L4",
+        "12_windows_dc_auth_log.md#L5",
+        "12_windows_dc_auth_log.md#L6"
+      ]
+    },
+    {
+      "text": "The large data transfer from SRV-FS01 to the attacker's VPN session is suspected to be data exfiltration.",
+      "assumption": "A large transfer of data from a sensitive file server to an attacker-controlled VPN session is indicative of data exfiltration.",
+      "citations": [
+        "15_firewall_internal_log.md#L6",
+        "17_ids_alert_summary.md#ALT-9005"
+      ]
+    },
+    {
+      "text": "The large 200 response to the SQL injection query '/orders/search?id=-1%20UNION%20SELECT%20NULL,username,password%20FROM%20users--' is suspected to indicate successful data extraction from the database.",
+      "assumption": "A large 200 response to an attack request may mean success.",
+      "citations": [
+        "13_web_server_log.md#L9",
+        "08_runbook_web_attack.md#S3"
+      ]
+    }
+  ],
+  "insufficient": [
+    {
+      "text": "The SRV-FS01 file access (audit) log is not collected, so it is unknown which specific files were read during the large data transfer.",
+      "citations": [
+        "20_log_source_coverage.md"
+      ]
+    },
+    {
+      "text": "The SRV-DB01 login and query log is not collected, so it is unknown what specific queries were executed or data accessed on the database server.",
+      "citations": [
+        "20_log_source_coverage.md"
+      ]
+    },
+    {
+      "text": "The internal firewall log is missing for the period 06:32:00 to 07:28:59 UTC, so any internal network activity by the attacker using amalik's account via VPN (10.10.3.45) during this time is not visible.",
+      "citations": [
+        "20_log_source_coverage.md"
+      ]
+    }
+  ],
+  "missing_sources": [
+    "SRV-FS01 file access (audit) log",
+    "SRV-DB01 login and query log",
+    "Web proxy log",
+    "Laptop endpoint security (EDR) logs"
+  ],
+  "closed_harmless": [
+    {
+      "activity": "Internal port scan from SCAN01 (10.10.9.50) against servers in 10.10.1.0/24 and 10.10.2.0/24.",
+      "change_id": "CHG-2026-1104-02",
+      "reason": "Approved monthly vulnerability scan.",
+      "citations": [
+        "05_change_calendar.md#CHG-2026-1104-02",
+        "17_ids_alert_summary.md#ALT-9006",
+        "01_company_security_rules.md#R3.1"
+      ]
+    },
+    {
+      "activity": "Remote desktop logon to SRV-DC01 by braza from 10.10.3.18 (VPN assigned IP).",
+      "change_id": "CHG-2026-1104-03",
+      "reason": "Approved security patching via remote desktop session.",
+      "citations": [
+        "05_change_calendar.md#CHG-2026-1104-03",
+        "12_windows_dc_auth_log.md#L11",
+        "17_ids_alert_summary.md#ALT-9007",
+        "01_company_security_rules.md#R3.1"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "incident": "External Scanning and Reconnaissance",
+      "text": "Check the change calendar for an approved scan that matches the source, the target and the time window.",
+      "runbook": "RB-SCAN-05",
+      "step": 1,
+      "citations": [
+        "10_runbook_scanning_recon.md#S1"
+      ]
+    },
+    {
+      "incident": "External Scanning and Reconnaissance",
+      "text": "Block the source IP 192.0.2.88 at the perimeter firewall.",
+      "runbook": "RB-SCAN-05",
+      "step": 3,
+      "citations": [
+        "10_runbook_scanning_recon.md#S3"
+      ]
+    },
+    {
+      "incident": "External Scanning and Reconnaissance",
+      "text": "Check which scanned ports answered (allowed) or were refused (denied), and whether any login attempts followed.",
+      "runbook": "RB-SCAN-05",
+      "step": 5,
+      "citations": [
+        "10_runbook_scanning_recon.md#S5"
+      ]
+    },
+    {
+      "incident": "External Scanning and Reconnaissance",
+      "text": "Watch the source IP 192.0.2.88 for the next 24 hours.",
+      "runbook": "RB-SCAN-05",
+      "step": 6,
+      "citations": [
+        "10_runbook_scanning_recon.md#S6"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Find every recipient of the message in the email gateway log.",
+      "runbook": "RB-PHISH-01",
+      "step": 1,
+      "citations": [
+        "06_runbook_phishing.md#S1"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Remove or quarantine message M-55187 from all mailboxes.",
+      "runbook": "RB-PHISH-01",
+      "step": 2,
+      "citations": [
+        "06_runbook_phishing.md#S2"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Block the sender domain orbit-logistlcs.example and the link domain orbit-payroll-verify.example at the email gateway and the perimeter firewall.",
+      "runbook": "RB-PHISH-01",
+      "step": 3,
+      "citations": [
+        "06_runbook_phishing.md#S3"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "For each recipient, check the firewall logs for a connection to the link address, to find who clicked.",
+      "runbook": "RB-PHISH-01",
+      "step": 4,
+      "citations": [
+        "06_runbook_phishing.md#S4"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "If a click is found, open RB-CRED-02 for that user.",
+      "runbook": "RB-PHISH-01",
+      "step": 5,
+      "citations": [
+        "06_runbook_phishing.md#S5"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Send a warning notice to all recipients: amalik@orbitlogistics.example, sraheel@orbitlogistics.example, utariq@orbitlogistics.example.",
+      "runbook": "RB-PHISH-01",
+      "step": 6,
+      "citations": [
+        "06_runbook_phishing.md#S6"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Record all findings in the incident ticket.",
+      "runbook": "RB-PHISH-01",
+      "step": 7,
+      "citations": [
+        "06_runbook_phishing.md#S7"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Call Ayesha Malik (+92-300-5550114) and ask if the login was theirs.",
+      "runbook": "RB-CRED-02",
+      "step": 1,
+      "citations": [
+        "07_runbook_credential_compromise.md#S1",
+        "18_user_directory.md#amalik"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Disable the account amalik in the directory and end all active VPN and remote sessions of that account.",
+      "runbook": "RB-CRED-02",
+      "step": 2,
+      "citations": [
+        "07_runbook_credential_compromise.md#S2"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Block the attacker source IP 198.51.100.77 at the perimeter firewall.",
+      "runbook": "RB-CRED-02",
+      "step": 3,
+      "citations": [
+        "07_runbook_credential_compromise.md#S3"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Reset the password for amalik through the helpdesk with identity checks and require new MFA enrollment.",
+      "runbook": "RB-CRED-02",
+      "step": 4,
+      "citations": [
+        "07_runbook_credential_compromise.md#S4"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Review all logins by the account in the last 24 hours and list every system it reached.",
+      "runbook": "RB-CRED-02",
+      "step": 5,
+      "citations": [
+        "07_runbook_credential_compromise.md#S5"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Disconnect Ayesha Malik's laptop (LT-FIN-014) from the network.",
+      "runbook": "RB-CRED-02",
+      "step": 6,
+      "citations": [
+        "07_runbook_credential_compromise.md#S6"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "For every system reached, check for further activity. If a large data transfer is seen, open RB-EXFIL-04.",
+      "runbook": "RB-CRED-02",
+      "step": 7,
+      "citations": [
+        "07_runbook_credential_compromise.md#S7"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Keep all logs unchanged as evidence.",
+      "runbook": "RB-CRED-02",
+      "step": 8,
+      "citations": [
+        "07_runbook_credential_compromise.md#S8"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Find sessions with an unusually large transfer from the source system in the firewall logs. Note the bytes, the times and the destination.",
+      "runbook": "RB-EXFIL-04",
+      "step": 1,
+      "citations": [
+        "09_runbook_data_exfiltration.md#S1"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Block the destination address 10.10.3.45 of the transfer.",
+      "runbook": "RB-EXFIL-04",
+      "step": 2,
+      "citations": [
+        "09_runbook_data_exfiltration.md#S2"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Keep the evidence: copy the relevant logs. Do not reboot the source server.",
+      "runbook": "RB-EXFIL-04",
+      "step": 3,
+      "citations": [
+        "09_runbook_data_exfiltration.md#S3"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Ask Saima Noor, Head of Finance, what data SRV-FS01 holds.",
+      "runbook": "RB-EXFIL-04",
+      "step": 4,
+      "citations": [
+        "09_runbook_data_exfiltration.md#S4",
+        "02_asset_inventory.md#A-1005"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Check if file-level audit logs exist. If they do not, record that it is unknown which files were read.",
+      "runbook": "RB-EXFIL-04",
+      "step": 5,
+      "citations": [
+        "09_runbook_data_exfiltration.md#S5"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "text": "Inform Legal and Compliance (Mariam Chaudhry) that finance data may be involved.",
+      "runbook": "RB-EXFIL-04",
+      "step": 6,
+      "citations": [
+        "09_runbook_data_exfiltration.md#S6",
+        "04_escalation_and_contacts.md#P1"
+      ]
+    },
+    {
+      "incident": "Web Application Attack (SQL Injection)",
+      "text": "Find the attacker IP and all its requests in the web server log.",
+      "runbook": "RB-WEB-03",
+      "step": 1,
+      "citations": [
+        "08_runbook_web_attack.md#S1"
+      ]
+    },
+    {
+      "incident": "Web Application Attack (SQL Injection)",
+      "text": "Block the attacker IP 192.0.2.150 at the perimeter firewall.",
+      "runbook": "RB-WEB-03",
+      "step": 2,
+      "citations": [
+        "08_runbook_web_attack.md#S2"
+      ]
+    },
+    {
+      "incident": "Web Application Attack (SQL Injection)",
+      "text": "Check response codes and response sizes to see if any request succeeded. A normal error is 4xx or 5xx; a large 200 response to an attack request may mean success.",
+      "runbook": "RB-WEB-03",
+      "step": 3,
+      "citations": [
+        "08_runbook_web_attack.md#S3"
+      ]
+    },
+    {
+      "incident": "Web Application Attack (SQL Injection)",
+      "text": "Ask the web team to review the code of the attacked page /orders/search on SRV-WEB01.",
+      "runbook": "RB-WEB-03",
+      "step": 4,
+      "citations": [
+        "08_runbook_web_attack.md#S4"
+      ]
+    },
+    {
+      "incident": "Web Application Attack (SQL Injection)",
+      "text": "Check the database server logs for matching queries, if they are available.",
+      "runbook": "RB-WEB-03",
+      "step": 5,
+      "citations": [
+        "08_runbook_web_attack.md#S5"
+      ]
+    },
+    {
+      "incident": "Web Application Attack (SQL Injection)",
+      "text": "Check that the SQL injection rule is active on the web server filter.",
+      "runbook": "RB-WEB-03",
+      "step": 6,
+      "citations": [
+        "08_runbook_web_attack.md#S6"
+      ]
+    },
+    {
+      "incident": "Web Application Attack (SQL Injection)",
+      "text": "Record all findings in the incident ticket.",
+      "runbook": "RB-WEB-03",
+      "step": 7,
+      "citations": [
+        "08_runbook_web_attack.md#S7"
+      ]
+    }
+  ],
+  "inform": [
+    {
+      "incident": "External Scanning and Reconnaissance",
+      "name": "SOC queue",
+      "role": "SOC queue",
+      "time_limit": "Next business day",
+      "citations": [
+        "04_escalation_and_contacts.md#P4"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "name": "Hamza Qureshi",
+      "role": "CISO",
+      "time_limit": "15 minutes",
+      "citations": [
+        "04_escalation_and_contacts.md#P1"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "name": "Farhan Ali",
+      "role": "IT Director",
+      "time_limit": "30 minutes",
+      "citations": [
+        "04_escalation_and_contacts.md#P1"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "name": "Mariam Chaudhry",
+      "role": "Legal and Compliance",
+      "time_limit": "1 hour",
+      "citations": [
+        "04_escalation_and_contacts.md#P1"
+      ]
+    },
+    {
+      "incident": "Phishing, Credential Compromise, and Data Exfiltration",
+      "name": "Saima Noor",
+      "role": "Data owner of SRV-FS01",
+      "time_limit": "1 hour",
+      "citations": [
+        "04_escalation_and_contacts.md#P1",
+        "02_asset_inventory.md#A-1005"
+      ]
+    },
+    {
+      "incident": "Web Application Attack (SQL Injection)",
+      "name": "Noman Javed",
+      "role": "Security Manager",
+      "time_limit": "1 hour",
+      "citations": [
+        "04_escalation_and_contacts.md#P2"
+      ]
+    },
+    {
+      "incident": "Web Application Attack (SQL Injection)",
+      "name": "Applications team",
+      "role": "System owner of SRV-WEB01",
+      "time_limit": "2 hours",
+      "citations": [
+        "04_escalation_and_contacts.md#P2",
+        "02_asset_inventory.md#A-1010"
+      ]
+    }
+  ],
+  "removedCitations": [],
+  "notes": [
+    "Actions: added 15 runbook step(s) the model left out."
+  ],
+  "generated_at": "2026-11-14T08:10:30.421Z"
+}

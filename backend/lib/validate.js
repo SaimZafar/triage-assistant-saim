@@ -37,6 +37,28 @@ function buildIndex() {
 const VALID = buildIndex()
 const LABELS = ['confirmed', 'suspected', 'insufficient']
 
+// A "confirmed" claim that matches one of these is a guess or an overclaim, so it becomes "suspected".
+const NEEDS_GUESS = [
+  /\b(indicat(?:e|es|ed|ing)|suggest(?:s|ed|ing)?|likely|probabl[ey]|possibl[ey]|presumabl[ey]|appears? to|seems? to|may have|might have|could have|implies|implying)\b/i,
+  /\b(sql|injection|sqli|exploit|web (?:application )?attack|attack)\b[^.]*\b(success(?:ful|fully)?|succeed(?:ed|s)?|worked|breached)\b/i,
+  /\b(success(?:ful|fully)?|succeed(?:ed|s)?)\b[^.]*\b(sql|injection|sqli|exploit|web (?:application )?attack)\b/i,
+  /\bdata (?:was )?retriev(?:ed|al)\b/i,
+  /\b(clicked|entered (?:her|his|their|the) password|typed (?:her|his|their|the) password|fell for|was phished|phished)\b/i,
+  /\b(stolen|compromised) (?:credentials|password|account)\b/i,
+  /\battacker (?:used|using|logged|performed|reset|accessed)\b/i,
+  /\b(?:data|files?) (?:was|were) (?:stolen|leaked|exfiltrated|read)\b/i
+]
+
+// A claim that quotes a company rule or the runbook is a statement of the rule, so it is left alone.
+const QUOTES_RULE = /\b(rule|rules|treated as|considered|runbook)\b/i
+
+// A "confirmed" claim that says a log is missing or silent is really "insufficient".
+const SAYS_MISSING =
+  /\b(not collected|is not available|are not available|not available|no log|not logged|no data|missing|does not (?:show|contain|record)|do not (?:show|contain|record)|cannot be identified|cannot be determined)\b/i
+
+// An answer about a suspected point must say so.
+const HEDGED = /\b(suspect(?:ed|s)?|cannot be confirmed|not confirmed|unconfirmed|may have|might|logs? (?:do|does) not show|not shown)\b/i
+
 export function isValidRef(ref) {
   return VALID.has(ref)
 }
@@ -69,6 +91,7 @@ function checkClaim(claim, index, removed, notes) {
   const citations = refs.filter(isValidRef)
   for (const r of refs) if (!isValidRef(r)) removed.add(r)
 
+  const text = stripTags(claim?.text)
   let label = claim?.label
   let assumption = claim?.assumption ? String(claim.assumption).trim() : null
 
@@ -84,12 +107,20 @@ function checkClaim(claim, index, removed, notes) {
   } else if (label === 'confirmed' && assumption) {
     label = 'suspected'
     notes.push(`Claim ${n}: changed to suspected (an assumption is stated).`)
+  } else if (label === 'confirmed' && SAYS_MISSING.test(text)) {
+    label = 'insufficient'
+    notes.push(`Claim ${n}: changed to insufficient (it says a log is missing or silent).`)
+  } else if (label === 'confirmed' && !QUOTES_RULE.test(text) && NEEDS_GUESS.some(re => re.test(text))) {
+    label = 'suspected'
+    assumption =
+      assumption ?? 'The cited lines show the events, but this conclusion links them with a guess that the logs do not show directly.'
+    notes.push(`Claim ${n}: changed to suspected (it needs a guess).`)
   } else if (label === 'suspected' && !assumption) {
     notes.push(`Claim ${n}: suspected but no assumption was stated.`)
   }
-  if (label === 'insufficient') assumption = null
 
-  return { text: stripTags(claim?.text), label, citations, assumption }
+  if (label === 'insufficient') assumption = null
+  return { text, label, citations, assumption }
 }
 
 // Checks a whole model result. Returns the cleaned result in the shape the frontend uses.
@@ -111,9 +142,15 @@ export function validateResult(result) {
 
   const assumption =
     [...new Set(claims.filter(c => c.label === 'suspected' && c.assumption).map(c => c.assumption))].join(' ') || null
+
   const citations = [...new Set(claims.flatMap(c => c.citations))]
   const gaps = (Array.isArray(result?.gaps) ? result.gaps : []).map(stripTags).filter(Boolean)
-  const answer = stripTags(result?.answer) || claims[0]?.text || ''
+
+  let answer = stripTags(result?.answer) || claims[0]?.text || ''
+  if (evidence === 'suspected' && answer && !HEDGED.test(answer)) {
+    answer = `Suspected, not confirmed: ${answer}`
+    notes.push('Answer: added "Suspected, not confirmed" because it stated a suspected point as fact.')
+  }
 
   if (removed.size) notes.push(`Removed ${removed.size} citation(s) that do not exist.`)
 

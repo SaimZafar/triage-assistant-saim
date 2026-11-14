@@ -35,6 +35,7 @@ function buildIndex() {
 }
 
 const VALID = buildIndex()
+const LABELS = ['confirmed', 'suspected', 'insufficient']
 
 export function isValidRef(ref) {
   return VALID.has(ref)
@@ -51,31 +52,70 @@ function expandRange(ref) {
   return Array.from({ length: to - from + 1 }, (_, i) => `${file}#L${from + i}`)
 }
 
-// Checks a model result and fixes what it can. Returns the cleaned result.
-export function validateResult(result) {
-  const listed = Array.isArray(result.citations) ? result.citations : []
+// Removes [[file#ref]] tags from text, including malformed ones like [[a#L2], [b#X]]
+function stripTags(text) {
+  return String(text ?? '')
+    .replace(/(?:\[+[^\[\]]*\.md[^\[\]]*\]+[\s,]*)+/g, '')
+    .replace(/\s+([.,;:])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
 
-  // also collect references written inline, including malformed ones like [[a#L2], [b#X]]
-  const inline = [...String(result.answer ?? '').matchAll(/([0-9]{2}_[a-z0-9_]+\.md)#([A-Za-z0-9.\-]+)/g)]
-    .map(m => `${m[1]}#${m[2].replace(/\.$/, '')}`)
+// Checks one claim: drops citations that do not exist and fixes labels that the evidence does not support
+function checkClaim(claim, index, removed, notes) {
+  const n = index + 1
+  const given = Array.isArray(claim?.citations) ? claim.citations : []
+  const refs = [...new Set(given.flatMap(c => expandRange(String(c).trim())))]
+  const citations = refs.filter(isValidRef)
+  for (const r of refs) if (!isValidRef(r)) removed.add(r)
 
-  const all = [...new Set([...listed, ...inline].flatMap(expandRange))]
-  const citations = all.filter(isValidRef)
-  const invalid = all.filter(r => !isValidRef(r))
+  let label = claim?.label
+  let assumption = claim?.assumption ? String(claim.assumption).trim() : null
 
-  let evidence = result.evidence
-  let assumption = result.assumption ?? null
-  const notes = []
-
-  if (evidence === 'confirmed' && citations.length === 0) {
-    evidence = 'suspected'
-    assumption = assumption ?? 'No valid log line or row was cited for this answer.'
-    notes.push('Changed to suspected: no valid citation.')
-  } else if (evidence === 'confirmed' && assumption) {
-    evidence = 'suspected'
-    notes.push('Changed to suspected: the answer states an assumption.')
+  if (!LABELS.includes(label)) {
+    label = 'suspected'
+    notes.push(`Claim ${n}: unknown label, set to suspected.`)
   }
-  if (invalid.length) notes.push(`Removed ${invalid.length} citation(s) that do not exist.`)
 
-  return { ...result, evidence, assumption, citations, removedCitations: invalid, notes }
+  if (label === 'confirmed' && citations.length === 0) {
+    label = 'suspected'
+    assumption = assumption ?? 'No valid log line or row was cited for this claim.'
+    notes.push(`Claim ${n}: changed to suspected (no valid citation).`)
+  } else if (label === 'confirmed' && assumption) {
+    label = 'suspected'
+    notes.push(`Claim ${n}: changed to suspected (an assumption is stated).`)
+  } else if (label === 'suspected' && !assumption) {
+    notes.push(`Claim ${n}: suspected but no assumption was stated.`)
+  }
+  if (label === 'insufficient') assumption = null
+
+  return { text: stripTags(claim?.text), label, citations, assumption }
+}
+
+// Checks a whole model result. Returns the cleaned result in the shape the frontend uses.
+export function validateResult(result) {
+  const notes = []
+  const removed = new Set()
+
+  const rawClaims = Array.isArray(result?.claims) ? result.claims : []
+  const claims = rawClaims
+    .map((c, i) => checkClaim(c, i, removed, notes))
+    .filter(c => c.text)
+
+  const labels = claims.map(c => c.label)
+  let evidence
+  if (labels.length === 0 || labels.every(l => l === 'insufficient')) evidence = 'insufficient'
+  else if (labels.includes('suspected')) evidence = 'suspected'
+  else evidence = 'confirmed'
+  if (labels.length === 0) notes.push('The model returned no claims.')
+
+  const assumption =
+    [...new Set(claims.filter(c => c.label === 'suspected' && c.assumption).map(c => c.assumption))].join(' ') || null
+  const citations = [...new Set(claims.flatMap(c => c.citations))]
+  const gaps = (Array.isArray(result?.gaps) ? result.gaps : []).map(stripTags).filter(Boolean)
+  const answer = stripTags(result?.answer) || claims[0]?.text || ''
+
+  if (removed.size) notes.push(`Removed ${removed.size} citation(s) that do not exist.`)
+
+  return { answer, claims, evidence, assumption, citations, gaps, removedCitations: [...removed], notes }
 }
